@@ -3,13 +3,14 @@ package jp.ac.titech.itpro.sdl.map;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -77,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         request.setInterval(10000L);
         request.setFastestInterval(5000L);
         request.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        request.setNumUpdates(1);
 
         callback = new LocationCallback() {
             @Override
@@ -94,8 +96,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return;
                 }
                 map.animateCamera(CameraUpdateFactory.newLatLng(ll));
+                stopLocationUpdate();
             }
         };
+    }
+
+    public void onClick(View v) {
+        Log.d(TAG, "onClick");
+        if (state != State.STARTED && apiClient.isConnected()) {
+            startLocationUpdate(true);
+        } else {
+            state = State.REQUESTING;
+        }
+
     }
 
     @Override
@@ -110,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onResume();
         Log.d(TAG, "onResume");
         if (state != State.STARTED && apiClient.isConnected()) {
-            startLocationUpdate(true);
+            stopLocationUpdate();
         } else {
             state = State.REQUESTING;
         }
@@ -186,7 +199,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void stopLocationUpdate() {
         Log.d(TAG, "stopLocationUpdate");
-        locationClient.removeLocationUpdates(callback);
-        state = State.STOPPED;
+        if (state != State.STOPPED) {
+            state = State.STOPPED;
+            locationClient.removeLocationUpdates(callback);
+        }
     }
 }
